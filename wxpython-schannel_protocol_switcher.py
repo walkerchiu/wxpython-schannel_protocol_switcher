@@ -4,6 +4,13 @@ import wx
 
 
 class App(wx.Frame):
+    """
+    Main application class for the protocol switcher.
+
+    Args:
+    - parent: The parent window.
+    - title: The title of the window.
+    """
 
     def __init__(self, parent, title):
         self.frame_size = (320, 200)
@@ -19,6 +26,9 @@ class App(wx.Frame):
         self.Centre()
 
     def InitUI(self):
+        """
+        Initializes the user interface.
+        """
         panel = wx.Panel(self)
 
         font = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
@@ -28,27 +38,27 @@ class App(wx.Frame):
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        str1 = wx.StaticText(panel, label='啟用以下協議將帶來資安風險，請謹慎使用：')
+        str1 = wx.StaticText(panel, label='Enable the following protocols with caution:')
         hbox.Add(str1)
         vbox.Add(hbox, flag=wx.LEFT | wx.TOP, border=10)
 
         vbox.Add((-1, 10))
 
         vbox_checkbox = wx.BoxSizer(wx.VERTICAL)
-        self.cb_tls_11 = wx.CheckBox(panel, label='啟用 TLS 1.1')
+        self.cb_tls_11 = wx.CheckBox(panel, label='Enable TLS 1.1')
         vbox_checkbox.Add(self.cb_tls_11)
-        self.cb_tls_10 = wx.CheckBox(panel, label='啟用 TLS 1.0')
+        self.cb_tls_10 = wx.CheckBox(panel, label='Enable TLS 1.0')
         vbox_checkbox.Add(self.cb_tls_10)
-        self.cb_ssl_30 = wx.CheckBox(panel, label='啟用 SSL 3.0')
+        self.cb_ssl_30 = wx.CheckBox(panel, label='Enable SSL 3.0')
         vbox_checkbox.Add(self.cb_ssl_30)
-        self.cb_ssl_20 = wx.CheckBox(panel, label='啟用 SSL 2.0')
+        self.cb_ssl_20 = wx.CheckBox(panel, label='Enable SSL 2.0')
         vbox_checkbox.Add(self.cb_ssl_20)
         vbox.Add(vbox_checkbox, flag=wx.LEFT, border=10)
 
         vbox.Add((-1, 25))
 
         hbox5 = wx.BoxSizer(wx.HORIZONTAL)
-        self.btn_submit = wx.Button(panel, label='確定', size=(70, 30))
+        self.btn_submit = wx.Button(panel, label='Submit', size=(70, 30))
         hbox5.Add(self.btn_submit)
         vbox.Add(hbox5, flag=wx.ALIGN_CENTER | wx.CENTER, border=10)
 
@@ -96,6 +106,9 @@ class App(wx.Frame):
         self._check()
 
     def _check(self):
+        """
+        Check the current status of the protocol checkboxes.
+        """
         registry = Registry()
         try:
             if registry.get_value(
@@ -154,6 +167,10 @@ class App(wx.Frame):
             self.cb_ssl_20.SetValue(False)
 
     def OnSubmit(self, event):
+        """
+        Handle the submit button click event.
+        Update the registry settings based on checkbox values.
+        """
         registry = Registry()
 
         if self.cb_tls_11.GetValue():
@@ -264,12 +281,12 @@ class App(wx.Frame):
                 value=0,
                 value_type=winreg.REG_DWORD)
 
-        wx.MessageBox("設定成功！請重新開機讓設定生效！", "操作提示", wx.OK | wx.ICON_INFORMATION)
+        wx.MessageBox("Settings saved! Please restart your computer for the changes to take effect!", "Operation Prompt", wx.OK | wx.ICON_INFORMATION)
 
 
 def main():
     app = wx.App()
-    ex = App(None, title='過時協議啟用切換器 0.1')
+    ex = App(None, title='Protocol Switcher 0.1')
     ex.Show()
     app.MainLoop()
 
