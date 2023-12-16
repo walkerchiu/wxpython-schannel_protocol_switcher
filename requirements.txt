@@ -1,4 +1,3 @@
 autopep8==2.1.0
-lib-registry==2.0.10
 pyinstaller==6.5.0
 wxPython==4.2.1

@@ -1,9 +1,9 @@
-from lib_registry import Registry
 import winreg
+
 import wx
 
 
-class App(wx.Frame):
+class ProtocolSwitcher(wx.Frame):
     """
     Main application class for the protocol switcher.
 
@@ -13,11 +13,10 @@ class App(wx.Frame):
     """
 
     def __init__(self, parent, title):
-        self.frame_size = (320, 200)
-        super(App, self).__init__(
+        super(ProtocolSwitcher, self).__init__(
             parent,
             title=title,
-            size=self.frame_size,
+            size=(320, 200),
             style=wx.MINIMIZE_BOX | wx.CAPTION | wx.CLOSE_BOX | wx.CLIP_CHILDREN,
         )
 
@@ -31,239 +30,75 @@ class App(wx.Frame):
         panel = wx.Panel(self)
 
         font = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
-
-        font.SetPointSize(5)
+        font.SetPointSize(10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        str1 = wx.StaticText(
+        protocols_label = wx.StaticText(
             panel, label="Enable the following protocols with caution:"
         )
-        hbox.Add(str1)
-        vbox.Add(hbox, flag=wx.LEFT | wx.TOP, border=10)
+        vbox.Add(protocols_label, flag=wx.LEFT | wx.TOP, border=10)
 
         vbox.Add((-1, 10))
 
-        vbox_checkbox = wx.BoxSizer(wx.VERTICAL)
-        self.cb_tls_11 = wx.CheckBox(panel, label="Enable TLS 1.1")
-        vbox_checkbox.Add(self.cb_tls_11)
-        self.cb_tls_10 = wx.CheckBox(panel, label="Enable TLS 1.0")
-        vbox_checkbox.Add(self.cb_tls_10)
-        self.cb_ssl_30 = wx.CheckBox(panel, label="Enable SSL 3.0")
-        vbox_checkbox.Add(self.cb_ssl_30)
-        self.cb_ssl_20 = wx.CheckBox(panel, label="Enable SSL 2.0")
-        vbox_checkbox.Add(self.cb_ssl_20)
-        vbox.Add(vbox_checkbox, flag=wx.LEFT, border=10)
+        # Create checkboxes for each protocol
+        checkboxes = [
+            ("Enable TLS 1.1", "TLS 1.1"),
+            ("Enable TLS 1.0", "TLS 1.0"),
+            ("Enable SSL 3.0", "SSL 3.0"),
+            ("Enable SSL 2.0", "SSL 2.0"),
+        ]
+
+        for label, protocol in checkboxes:
+            checkbox = wx.CheckBox(panel, label=label)
+            vbox.Add(checkbox, flag=wx.LEFT, border=10)
+            setattr(self, f"cb_{protocol.lower().replace(' ', '_')}", checkbox)
 
         vbox.Add((-1, 25))
 
-        hbox5 = wx.BoxSizer(wx.HORIZONTAL)
-        self.btn_submit = wx.Button(panel, label="Submit", size=(70, 30))
-        hbox5.Add(self.btn_submit)
-        vbox.Add(hbox5, flag=wx.ALIGN_CENTER | wx.CENTER, border=10)
+        submit_btn = wx.Button(panel, label="Submit", size=(70, 30))
+        vbox.Add(submit_btn, flag=wx.ALIGN_CENTER | wx.CENTER, border=10)
 
         panel.SetSizer(vbox)
 
-        self.btn_submit.Bind(wx.EVT_BUTTON, self.OnSubmit)
+        submit_btn.Bind(wx.EVT_BUTTON, self.OnSubmit)
 
-        self.Protocols = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\Schannel\\Protocols"
+        # List of protocols to handle
+        self.protocols = ["TLS 1.1", "TLS 1.0", "SSL 3.0", "SSL 2.0"]
 
-        registry = Registry()
-        registry.create_key(self.Protocols + "\\TLS 1.1\\Client", parents=True)
-        registry.create_key(self.Protocols + "\\TLS 1.1\\Server", parents=True)
-        registry.create_key(self.Protocols + "\\TLS 1.0\\Client", parents=True)
-        registry.create_key(self.Protocols + "\\TLS 1.0\\Server", parents=True)
-        registry.create_key(self.Protocols + "\\SSL 3.0\\Client", parents=True)
-        registry.create_key(self.Protocols + "\\SSL 3.0\\Server", parents=True)
-        registry.create_key(self.Protocols + "\\SSL 2.0\\Client", parents=True)
-        registry.create_key(self.Protocols + "\\SSL 2.0\\Server", parents=True)
-
-        registry.set_value(
-            key=self.Protocols + "\\TLS 1.1\\Client",
-            value_name="DisabledByDefault",
-            value=1,
-            value_type=winreg.REG_DWORD,
-        )
-        registry.set_value(
-            key=self.Protocols + "\\TLS 1.0\\Client",
-            value_name="DisabledByDefault",
-            value=1,
-            value_type=winreg.REG_DWORD,
-        )
-        registry.set_value(
-            key=self.Protocols + "\\SSL 3.0\\Client",
-            value_name="DisabledByDefault",
-            value=1,
-            value_type=winreg.REG_DWORD,
-        )
-        registry.set_value(
-            key=self.Protocols + "\\SSL 2.0\\Client",
-            value_name="DisabledByDefault",
-            value=1,
-            value_type=winreg.REG_DWORD,
-        )
-
+        # Check the current status of the checkboxes
         self._check()
 
     def _check(self):
         """
         Check the current status of the protocol checkboxes.
         """
-        registry = Registry()
-        try:
-            if registry.get_value(
-                self.Protocols + "\\TLS 1.1\\Client", "Enabled"
-            ) and registry.get_value(self.Protocols + "\\TLS 1.1\\Server", "Enabled"):
-                self.cb_tls_11.SetValue(True)
-            else:
-                self.cb_tls_11.SetValue(False)
-        except BaseException:
-            self.cb_tls_11.SetValue(False)
-
-        try:
-            if registry.get_value(
-                self.Protocols + "\\TLS 1.0\\Client", "Enabled"
-            ) and registry.get_value(self.Protocols + "\\TLS 1.0\\Server", "Enabled"):
-                self.cb_tls_10.SetValue(True)
-            else:
-                self.cb_tls_10.SetValue(False)
-        except BaseException:
-            self.cb_tls_10.SetValue(False)
-
-        try:
-            if registry.get_value(
-                self.Protocols + "\\SSL 3.0\\Client", "Enabled"
-            ) and registry.get_value(self.Protocols + "\\SSL 3.0\\Server", "Enabled"):
-                self.cb_ssl_30.SetValue(True)
-            else:
-                self.cb_ssl_30.SetValue(False)
-        except BaseException:
-            self.cb_ssl_30.SetValue(False)
-
-        try:
-            if registry.get_value(
-                self.Protocols + "\\SSL 2.0\\Client", "Enabled"
-            ) and registry.get_value(self.Protocols + "\\SSL 2.0\\Server", "Enabled"):
-                self.cb_ssl_20.SetValue(True)
-            else:
-                self.cb_ssl_20.SetValue(False)
-        except BaseException:
-            self.cb_ssl_20.SetValue(False)
+        for protocol in self.protocols:
+            key = f"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\Schannel\\Protocols\\{protocol}\\Client"
+            try:
+                enabled = winreg.QueryValueEx(
+                    winreg.HKEY_LOCAL_MACHINE, key + "\\Enabled"
+                )[0]
+                getattr(self, f"cb_{protocol.lower().replace(' ', '_')}").SetValue(
+                    bool(enabled)
+                )
+            except FileNotFoundError:
+                pass
 
     def OnSubmit(self, event):
         """
         Handle the submit button click event.
         Update the registry settings based on checkbox values.
         """
-        registry = Registry()
-
-        if self.cb_tls_11.GetValue():
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.1\\Client",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
+        for protocol in self.protocols:
+            key = f"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\Schannel\\Protocols\\{protocol}\\Client"
+            value = (
+                1
+                if getattr(self, f"cb_{protocol.lower().replace(' ', '_')}").GetValue()
+                else 0
             )
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.1\\Server",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
-            )
-        else:
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.1\\Client",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
-            )
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.1\\Server",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
-            )
-
-        if self.cb_tls_10.GetValue():
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.0\\Client",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
-            )
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.0\\Server",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
-            )
-        else:
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.0\\Client",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
-            )
-            registry.set_value(
-                key=self.Protocols + "\\TLS 1.0\\Server",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
-            )
-
-        if self.cb_ssl_30.GetValue():
-            registry.set_value(
-                key=self.Protocols + "\\SSL 3.0\\Client",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
-            )
-            registry.set_value(
-                key=self.Protocols + "\\SSL 3.0\\Server",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
-            )
-        else:
-            registry.set_value(
-                key=self.Protocols + "\\SSL 3.0\\Client",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
-            )
-            registry.set_value(
-                key=self.Protocols + "\\SSL 3.0\\Server",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
-            )
-
-        if self.cb_ssl_20.GetValue():
-            registry.set_value(
-                key=self.Protocols + "\\SSL 2.0\\Client",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
-            )
-            registry.set_value(
-                key=self.Protocols + "\\SSL 2.0\\Server",
-                value_name="Enabled",
-                value=1,
-                value_type=winreg.REG_DWORD,
-            )
-        else:
-            registry.set_value(
-                key=self.Protocols + "\\SSL 2.0\\Client",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
-            )
-            registry.set_value(
-                key=self.Protocols + "\\SSL 2.0\\Server",
-                value_name="Enabled",
-                value=0,
-                value_type=winreg.REG_DWORD,
+            winreg.SetValueEx(
+                winreg.HKEY_LOCAL_MACHINE, key + "\\Enabled", 0, winreg.REG_DWORD, value
             )
 
         wx.MessageBox(
@@ -275,7 +110,7 @@ class App(wx.Frame):
 
 def main():
     app = wx.App()
-    ex = App(None, title="Protocol Switcher 0.1")
+    ex = ProtocolSwitcher(None, title="Protocol Switcher 0.1")
     ex.Show()
     app.MainLoop()
 
